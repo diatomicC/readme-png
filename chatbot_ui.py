@@ -32,7 +32,7 @@ def chatbot_ui():
     st.title("Chat with Rhythmee")
 
     if "openai_model" not in st.session_state:
-        st.session_state["openai_model"] = "gpt-3.5-turbo"
+        st.session_state["openai_model"] = "gpt-4o"
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
