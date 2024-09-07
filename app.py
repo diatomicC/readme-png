@@ -7,6 +7,8 @@ import base64
 import mimetypes
 import datetime
 
+from pages import show_api_page, show_chatbot_page
+
 st.set_page_config(layout="centered", page_title="ReadMePNG")
 
 if "page" not in st.session_state:
@@ -56,7 +58,7 @@ def extract_text_from_image(image):
             }
             )
 
-        extracted_text = response['choices'][0]['message']['content']
+        extracted_text = response.choices[0].message.content
         return extracted_text
 
     except Exception as e:
@@ -72,72 +74,72 @@ def translate_text_and_generate_markdown(text, target_languages):
             {"role": "user", "content": f"Translate this text into {lang}: {text}. Format the translation in Markdown."}
         ]
 
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
+        response = openai.chat.completions.create(
+            model="gpt-4o",
             messages=messages,
-            max_tokens=10000
+            max_tokens=2048
         )
         
-        translations[lang] = response['choices'][0]['message']['content']
+        translations[lang] = response.choices[0].message.content
     
     return translations
 
 # Main Streamlit function
 def main():
     st.title("ReadMePNG Service")
-
-    # File upload
-    uploaded_files = st.file_uploader("Upload PNG files", type="png", accept_multiple_files=True)
-    
-    if uploaded_files:
-        st.subheader("Uploaded Images")
-        for file in uploaded_files:
-            st.image(file, caption=file.name, use_column_width=True)
+    if st.session_state.page == "upload":
+        # File upload
+        uploaded_files = st.file_uploader("Upload PNG files", type="png", accept_multiple_files=True)
         
-        if st.button("Process Images"):
-            extracted_text = ""
+        if uploaded_files:
+            st.subheader("Uploaded Images")
             for file in uploaded_files:
-                image = Image.open(file)
-                extracted_text += extract_text_from_image(image) + "\n\n"
+                st.image(file, caption=file.name, use_column_width=True)
             
-            st.session_state.extracted_text = extracted_text
-            st.success("Text extracted successfully!")
+            if st.button("Process Images"):
+                extracted_text = ""
+                for file in uploaded_files:
+                    image = Image.open(file)
+                    extracted_text += extract_text_from_image(image) + "\n\n"
+                
+                st.session_state.extracted_text = extracted_text
+                st.success("Text extracted successfully!")
 
-    # Display extracted text after processing
-    if 'extracted_text' in st.session_state:
-        st.subheader("Extracted Text from Image")
-        st.text_area("OCR Result", value=st.session_state.extracted_text, height=300)
+        # Display extracted text after processing
+        if 'extracted_text' in st.session_state:
+            st.subheader("Extracted Text from Image")
+            st.text_area("OCR Result", value=st.session_state.extracted_text, height=300)
 
-        # Language selection for translation
-        languages = [
-            "English", "Chinese", "Japanese", "Spanish", "French", "German", 
-            "Italian", "Portuguese", "Russian", "Korean", "Arabic", "Hindi", 
-            "Dutch", "Swedish", "Danish", "Finnish", "Turkish", "Greek", "Polish", "Thai"
-        ]
-        selected_languages = st.multiselect("Select target languages for translation", languages)
+            # Language selection for translation
+            languages = [
+                "English", "Chinese", "Japanese", "Spanish", "French", "German", 
+                "Italian", "Portuguese", "Russian", "Korean", "Arabic", "Hindi", 
+                "Dutch", "Swedish", "Danish", "Finnish", "Turkish", "Greek", "Polish", "Thai"
+            ]
+            selected_languages = st.multiselect("Select target languages for translation", languages)
 
-        # Translate button
-        if selected_languages and st.button("Translate"):
-            translations = translate_text_and_generate_markdown(st.session_state.extracted_text, selected_languages)
-            st.session_state.translations = translations
-            st.success("Translation completed!")
+            # Translate button
+            if selected_languages and st.button("Translate"):
+                translations = translate_text_and_generate_markdown(st.session_state.extracted_text, selected_languages)
+                st.session_state.translations = translations
+                st.success("Translation completed!")
 
-    # Display translated markdown content
-    if 'translations' in st.session_state:
-        st.subheader("Translated Markdown Content")
-        for lang, translation in st.session_state.translations.items():
-            with st.expander(f"{lang} Translation"):
-                st.markdown(translation)
+        # Display translated markdown content
+        if 'translations' in st.session_state:
+            st.subheader("Translated Markdown Content")
+            for lang, translation in st.session_state.translations.items():
+                with st.expander(f"{lang} Translation"):
+                    st.markdown(translation)
 
-        # Download section for markdown files
-        st.subheader("Download Translated Markdown Files")
-        for lang, translation in st.session_state.translations.items():
-            st.download_button(
-                label=f"Download {lang} Markdown",
-                data=translation,
-                file_name=f"product_description_{lang}.md",
-                mime="text/markdown"
-            )
+            # Download section for markdown files
+            st.subheader("Download Translated Markdown Files")
+            for lang, translation in st.session_state.translations.items():
+                st.download_button(
+                    label=f"Download {lang} Markdown",
+                    data=translation,
+                    file_name=f"product_description_{lang}.md",
+                    mime="text/markdown"
+                )
 
 if __name__ == "__main__":
     main()
@@ -151,12 +153,12 @@ if st.button('Rerun'):
 if st.session_state.page == "upload":
     if st.button("Go to API Page"):
         st.session_state.page = "api"
+        st.empty()  # Remove existing components
         st.rerun()
 elif st.session_state.page == "api":
     show_api_page()
 elif st.session_state.page == "chatbot":
     show_chatbot_page()
-
 
 
 # import streamlit as st
