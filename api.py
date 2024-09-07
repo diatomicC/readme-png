@@ -18,6 +18,14 @@ def get_openai_stream(messages, model):
             for m in messages
         ],
         stream=True,
+        temperature=1,
+        max_tokens=1024,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0,
+        response_format={
+            "type": "json_object"
+        }
     )
     for chunk in stream:
         if chunk.choices[0].delta.content is not None:
