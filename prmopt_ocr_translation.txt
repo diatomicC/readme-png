@@ -1,0 +1,1 @@
+Take the text from this given image about a product on an online shop, and translate them into English.
