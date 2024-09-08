@@ -67,15 +67,15 @@ def main():
     page = st.sidebar.radio("Navigation", ["Upload", "View All Items"])
     
     if page == "Upload":
-        uploaded_files = st.file_uploader("Upload PNG files", type="png", accept_multiple_files=True)
+        uploaded_files = st.file_uploader("Upload a PNG file", type="png", accept_multiple_files=True)
        
         if uploaded_files:
-            st.subheader("Uploaded Images")
+            st.subheader("Uploaded Image")
             for file in uploaded_files:
                 with st.expander(f"Image: {file.name}", expanded=True, icon="📜"):
                     st.image(file, caption=file.name, use_column_width=True)
             
-            if st.button("Process Images"):
+            if st.button("Process Image"):
                 extracted_text = ""
                 for file in uploaded_files:
                     image = Image.open(file)
