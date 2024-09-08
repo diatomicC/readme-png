@@ -1,6 +1,7 @@
 import streamlit as st
 from api import run_llm_api_test
 from chatbot_ui import chatbot_ui
+from utils import get_all_from_database, text_to_speech
 
 def show_api_page():
     st.title("API Page")
@@ -34,3 +35,58 @@ def show_chatbot_page():
     if st.button("Go back to API Page"):
         st.session_state.page = "api"
         st.rerun()
+
+def show_all_items_page():
+    items = get_all_from_database()
+    
+    if st.session_state.page == "chatbot":
+        chatbot_ui(st.session_state.productName, st.session_state.productPrice, st.session_state.productInformation, st.session_state.Language, new_chat=st.session_state.get("new_chat", False))
+        # Reset the new_chat flag after it's been used
+        st.session_state.new_chat = False
+        if st.button("Stop chatting"):
+            st.session_state.page = "upload"
+            # Clear chatbot session state
+            st.session_state.pop("productName", None)
+            st.session_state.pop("productPrice", None)
+            st.session_state.pop("productInformation", None)
+            st.session_state.pop("Language", None)
+            st.session_state.pop("messages", None)
+            st.rerun()
+    else:
+        for item in items:
+            with st.expander(f"{item['product_name']} - ${item['price']}", expanded=False):
+                st.text("Product Name: " + item['product_name'])
+                st.text("Price: $" + str(item['price']))
+                st.image(f"./saved_images/{item['image_filename']}", caption=item['image_filename'], use_column_width=True)
+                st.subheader("Extracted Text")
+                st.text_area("", value=item['extracted_text'], height=100)
+                st.subheader("Translations")
+                for lang, translation in item['translations'].items():
+                    st.text_area(f"{lang} Translation", value=translation, height=100)
+                    # add text to speech
+                    if st.button(f"Listen to {lang} Translation"):
+                        text_to_speech(translation)
+                        
+                # select language
+                languages = [
+                    "English", "Chinese", "Japanese", "Spanish", "French", "German", 
+                    "Italian", "Portuguese", "Russian", "Korean", "Arabic", "Hindi", 
+                    "Dutch", "Swedish", "Danish", "Finnish", "Turkish", "Greek", "Polish", "Thai"
+                ]
+                selected_language = st.selectbox("Select chatbot language", languages, key=item['image_filename']+'chatbot')
+                
+                # call chatbot_ui
+                if selected_language:
+                    if st.button("Go to Chatbot", key=item['image_filename']) and selected_language:
+                        st.session_state.page = "chatbot"
+                        st.session_state.productName = item['product_name']
+                        st.session_state.productPrice = item['price']
+                        st.session_state.productInformation = item['extracted_text']
+                        st.session_state.Language = selected_language
+                        st.session_state.new_chat = True
+                        st.rerun()
+                    else:
+                        st.write("Please select chatbot language to start chatting")
+                else:
+                    st.write("Please select chatbot language to start chatting")
+    
